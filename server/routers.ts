@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
-import { createLead, updateLeadReport, updateLeadStatus, getLeadById, getAllLeads, deleteLead } from "./db";
+import { createLead, updateLeadReport, updateLeadStatus, getLeadById, getAllLeads } from "./db";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -79,12 +79,11 @@ export const appRouter = router({
       return getAllLeads();
     }),
 
-    // Admin: delete a lead
+    // Admin: delete a lead — DISABLED (reports page has no auth, this would let anyone wipe leads)
     deleteLead: publicProcedure
       .input(z.object({ leadId: z.number() }))
-      .mutation(async ({ input }) => {
-        await deleteLead(input.leadId);
-        return { success: true };
+      .mutation(async () => {
+        throw new Error("Lead deletion is disabled");
       }),
   }),
 });
