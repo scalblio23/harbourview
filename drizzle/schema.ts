@@ -45,3 +45,15 @@ export const leads = mysqlTable("leads", {
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
+
+// Blocked slots — admin can block whole days or individual hour buckets
+// dateKey is "YYYY-MM-DD"; hourKey is "HH:00" (e.g. "09:00") or NULL for a full-day block
+export const blockedSlots = mysqlTable("blockedSlots", {
+  id: int("id").autoincrement().primaryKey(),
+  dateKey: varchar("dateKey", { length: 10 }).notNull(),
+  hourKey: varchar("hourKey", { length: 5 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BlockedSlot = typeof blockedSlots.$inferSelect;
+export type InsertBlockedSlot = typeof blockedSlots.$inferInsert;
