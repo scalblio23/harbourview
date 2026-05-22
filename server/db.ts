@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, leads, InsertLead, Lead } from "../drizzle/schema";
+import { InsertUser, users, leads, InsertLead, Lead, blockedSlots, InsertBlockedSlot, BlockedSlot } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -127,4 +127,30 @@ export async function deleteLead(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(leads).where(eq(leads.id, id));
+}
+
+// ── Blocked slot helpers ──────────────────────────────────────────────────────
+// dateKey: "YYYY-MM-DD" — required
+// hourKey: "HH:00" (e.g. "09:00") for a single-hour block, or null for a whole-day block
+
+export async function getBlockedSlots(): Promise<BlockedSlot[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(blockedSlots).orderBy(blockedSlots.dateKey);
+}
+
+export async function addBlockedSlot(data: InsertBlockedSlot): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(blockedSlots).values(data);
+  return (result[0] as any).insertId as number;
+}
+
+export async function removeBlockedSlot(dateKey: string, hourKey: string | null): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const condition = hourKey === null
+    ? and(eq(blockedSlots.dateKey, dateKey), isNull(blockedSlots.hourKey))
+    : and(eq(blockedSlots.dateKey, dateKey), eq(blockedSlots.hourKey, hourKey));
+  await db.delete(blockedSlots).where(condition);
 }
