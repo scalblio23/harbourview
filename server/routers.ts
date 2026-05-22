@@ -4,7 +4,10 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { notifyOwner } from "./_core/notification";
-import { createLead, updateLeadReport, updateLeadStatus, getLeadById, getAllLeads } from "./db";
+import {
+  createLead, updateLeadReport, updateLeadStatus, getLeadById, getAllLeads,
+  getBlockedSlots, addBlockedSlot, removeBlockedSlot,
+} from "./db";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -84,6 +87,34 @@ export const appRouter = router({
       .input(z.object({ leadId: z.number() }))
       .mutation(async () => {
         throw new Error("Lead deletion is disabled");
+      }),
+
+    // Admin: blocked-slot management
+    getBlockedSlots: publicProcedure.query(async () => {
+      return getBlockedSlots();
+    }),
+
+    addBlockedSlot: publicProcedure
+      .input(z.object({
+        dateKey: z.string(),                    // "YYYY-MM-DD"
+        hourKey: z.string().nullable(),         // "HH:00" or null for whole-day
+      }))
+      .mutation(async ({ input }) => {
+        const id = await addBlockedSlot({
+          dateKey: input.dateKey,
+          hourKey: input.hourKey ?? null,
+        });
+        return { id };
+      }),
+
+    removeBlockedSlot: publicProcedure
+      .input(z.object({
+        dateKey: z.string(),
+        hourKey: z.string().nullable(),
+      }))
+      .mutation(async ({ input }) => {
+        await removeBlockedSlot(input.dateKey, input.hourKey);
+        return { success: true };
       }),
   }),
 });
@@ -205,4 +236,4 @@ Return ONLY valid JSON matching this exact schema with no extra text.`;
   }
 }
 
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeset appRouter;
