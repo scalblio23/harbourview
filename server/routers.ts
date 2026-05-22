@@ -236,4 +236,4 @@ Return ONLY valid JSON matching this exact schema with no extra text.`;
   }
 }
 
-export type AppRouter = typeset appRouter;
+export type AppRouter = typeof appRouter;
